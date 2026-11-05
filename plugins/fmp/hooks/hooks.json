@@ -1,0 +1,16 @@
+{
+  "description": "At session start and after a compact, tell Claude which folder this is and, once signed in, add your company pages and session note.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

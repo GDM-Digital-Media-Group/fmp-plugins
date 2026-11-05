@@ -1,0 +1,16 @@
+{
+  "name": "fmp",
+  "version": "0.2.0",
+  "description": "Your FixMyPrompt memories in Claude Code. Each session starts by checking what you saved for the folder you are in.",
+  "author": {
+    "name": "GDM Digital Media Group",
+    "email": "support@fixmyprompt.net"
+  },
+  "homepage": "https://fixmyprompt.net",
+  "privacyPolicyUrl": "https://fixmyprompt.net/privacy",
+  "keywords": [
+    "memory",
+    "prompts",
+    "mcp"
+  ]
+}
