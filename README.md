@@ -1,8 +1,41 @@
-# FixMyPrompt plugins for Claude Code
+# FixMyPrompt for Claude Code
 
-This marketplace holds one plugin, `fmp`. It connects Claude Code to your FixMyPrompt memories, so a session can start from what you already worked out for a folder instead of working it out again.
+**Stop Claude Code from solving the same problem twice.**
 
-Using it needs a FixMyPrompt account on the Pro plan, since memories over MCP are part of Pro.
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-net.fixmyprompt%2Ffmp-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=net.fixmyprompt)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+
+You spend an hour with Claude getting a flaky test to pass. It finally works out the fix. Next week the same kind of failure shows up in another file, and Claude starts from zero, because CLAUDE.md never had that fix in it and auto memory kept one line at best.
+
+This plugin saves the fix itself: when it applies, the steps that worked, how to check them, and what looked right but failed. At the start of every session in that folder, Claude gets the list of what was already solved there and pulls the full steps only when one fits the task.
+
+```text
+Example, for illustration
+
+> claude
+  SessionStart hook: This folder is billing-api. Before you start work,
+  call the fmp mem_index tool with project "billing-api" ...
+
+● fmp - mem_index (project: "billing-api")
+  #12 Flaky date tests: freeze the clock and seed the RNG
+  #9  Stripe webhook 400s locally: forward with the CLI, not ngrok
+  #4  Running migrations: never db push, add a file under supabase/migrations
+
+> the invoice tests are failing randomly again
+
+● Using #12. Same symptom as the date tests: ...
+```
+
+## What it does
+
+- **Memories that load themselves.** A session-start hook tells Claude which folder it is in and to check what is saved for it. No prompt to remember.
+- **Saves lessons as you work.** When Claude goes from a mistake to a fix that works, it saves that as a draft memory and says one line. Nothing interrupts the work.
+- **Imports your past sessions.** `/fmp:import` reads your Claude Code logs for this folder on your machine and saves the lessons in them.
+- **Checks your agent files.** `/fmp:doctor` scores CLAUDE.md, AGENTS.md and `.cursorrules`, finds missing guardrails and the text tools pasted in, and writes a fixed file. Try it free on the web first: [CLAUDE.md checker](https://fixmyprompt.net/claude-md-checker).
+
+Memories over MCP are part of the FixMyPrompt Pro plan, with a 7-day trial. The hook itself is about 130 lines of plain Node in [`plugins/fmp/hooks/session-start.mjs`](plugins/fmp/hooks/session-start.mjs), so you can read exactly what it sends before you install it.
+
+New to hooks or memory in Claude Code? These guides explain what this plugin builds on: [Claude Code memory explained](https://fixmyprompt.net/blogs/claude-code-memory-explained) and [Claude Code hooks explained](https://fixmyprompt.net/blogs/claude-code-hooks-explained).
 
 ## Install
 
