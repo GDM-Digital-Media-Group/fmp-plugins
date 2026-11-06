@@ -9,7 +9,7 @@ Using it needs a FixMyPrompt account on the Pro plan, since memories over MCP ar
 In Claude Code, run:
 
 ```
-/plugin marketplace add GDM-Ditigal-Media-Group/fmp-plugins
+/plugin marketplace add GDM-Digital-Media-Group/fmp-plugins
 /plugin install fmp@fmp-plugins
 ```
 
