@@ -1,8 +1,11 @@
 ---
-description: Sign this plugin in to FixMyPrompt, so each session starts with your company pages and your session note for the folder.
+name: sign-in
+description: Sign the fmp plugin in to FixMyPrompt, so each session starts with the person's company pages and their session note for the folder. Use when the person asks to sign the plugin in, check its sign-in, or sign it out.
 ---
 
 Sign the fmp plugin in to the person's FixMyPrompt account. Once signed in, the session-start hook adds their approved company pages and their session note for this folder at the start of each session and after each compact. The sign-in can only read those; it never writes anything.
+
+The commands below use `${CLAUDE_PLUGIN_ROOT}`, the fmp plugin's folder. Claude Code fills it in. In other apps, such as Codex, it is the folder two levels above this SKILL.md: put that path in its place before you run a command.
 
 If the person asks whether the plugin is signed in, run only `status` (step 4). If they ask to sign out, run only `sign-out` (step 5).
 
@@ -31,8 +34,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/signin.mjs" finish
 It checks every few seconds for up to 100 seconds and prints one JSON line:
 
 - `{"status": "ok", "account": ...}`: say the plugin is signed in to that account, and that the next session (or the next compact) starts with their pages and session note.
-- `pending`: the code was not approved yet. Ask the person to approve it, then run `finish` once more. If it is still `pending`, tell them to run /fmp:sign-in again.
-- `expired`: the code ran out or was already used. Tell them to run /fmp:sign-in again.
+- `pending`: the code was not approved yet. Ask the person to approve it, then run `finish` once more. If it is still `pending`, tell them to run the fmp sign-in again (/fmp:sign-in in Claude Code).
+- `expired`: the code ran out or was already used. Tell them to run the fmp sign-in again (/fmp:sign-in in Claude Code).
 
 Never show the secret the sign-in saves, and never copy it anywhere.
 

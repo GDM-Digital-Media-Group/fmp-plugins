@@ -12,7 +12,7 @@
       "name": "fmp",
       "source": "./plugins/fmp",
       "description": "Your FixMyPrompt memories in Claude Code. Each session starts by checking what you saved for the folder you are in.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "GDM Digital Media Group",
         "email": "support@fixmyprompt.net"

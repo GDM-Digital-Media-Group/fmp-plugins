@@ -1,8 +1,11 @@
 ---
-description: Import lessons from past Claude Code sessions on this machine into FixMyPrompt as auto-saved drafts for the person to look over.
+name: import
+description: Import lessons from past Claude Code or Codex sessions on this machine into FixMyPrompt as auto-saved drafts for the person to look over. Use when the person asks to import past sessions or lessons.
 ---
 
 Import the lessons worth keeping from past sessions in this folder, so the next session does not repeat the same mistakes. It needs the `fmp` connection and a Pro plan or above.
+
+The commands below use `${CLAUDE_PLUGIN_ROOT}`, the fmp plugin's folder. Claude Code fills it in. In other apps, such as Codex, it is the folder two levels above this SKILL.md: put that path in its place before you run a command.
 
 Only lessons are sent to FixMyPrompt. Never send code, logs, transcripts or whole sessions.
 
@@ -14,9 +17,9 @@ Run:
 node "${CLAUDE_PLUGIN_ROOT}/scripts/sessions.mjs" list
 ```
 
-It prints JSON: `run` (keep it for step 4) and `sessions`, each with `id`, `cwd`, `started`, `messages` and `imported`. By default it lists this folder's sessions from the last 30 days, newest first. Add `--days N` for a longer window, or `--all` for every folder, only when the person asks for it.
+It prints JSON: `run` (keep it for step 4) and `sessions`, each with `id`, `app` (`claude` for Claude Code or `codex` for Codex), `cwd`, `started`, `messages` and `imported`. It reads both apps' logs on this machine, so the list can hold sessions from either. By default it lists this folder's sessions from the last 30 days, newest first. Add `--days N` for a longer window, or `--all` for every folder, only when the person asks for it.
 
-Show the person what was found: how many sessions, their dates and message counts, and which were already imported. Ask which to read. The default is this folder's sessions that are not imported yet. If none are left, say so and stop.
+Show the person what was found: how many sessions, which app each came from, their dates and message counts, and which were already imported. Ask which to read. The default is this folder's sessions that are not imported yet. If none are left, say so and stop.
 
 ## 2. Read them
 
@@ -63,7 +66,7 @@ Mark every session you read, so the next import skips it:
 node "${CLAUDE_PLUGIN_ROOT}/scripts/sessions.mjs" mark <id> <id> ...
 ```
 
-The record stays on this machine in `fmp/imported-sessions.json` under the Claude folder. It is never sent to FixMyPrompt.
+The record stays on this machine in `~/.claude/fmp/imported-sessions.json`, for sessions from either app. It is never sent to FixMyPrompt.
 
 ## 6. Report
 

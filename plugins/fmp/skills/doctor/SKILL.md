@@ -1,12 +1,13 @@
 ---
-description: Check this repo's agent instruction files with the FixMyPrompt Agent Doctor, then write the fixed files with a full change list.
+name: doctor
+description: Check this repo's agent instruction files with the FixMyPrompt Agent Doctor, then write the fixed files with a full change list. Use when the person asks to check or fix CLAUDE.md, AGENTS.md or other agent files.
 ---
 
 Run the FixMyPrompt Agent Doctor on this repo's agent instruction files. It needs the `fmp` connection and a Pro plan or above.
 
 ## 1. Collect the files
 
-Find these files in the current folder and in each parent folder up to the filesystem root, plus the global one:
+Find these files in the current folder and in each parent folder up to the filesystem root, plus the global ones:
 
 - `CLAUDE.md`
 - `AGENTS.md`
@@ -14,10 +15,11 @@ Find these files in the current folder and in each parent folder up to the files
 - `.cursor/rules/*` (every file in that folder)
 - `.github/copilot-instructions.md`
 - `~/.claude/CLAUDE.md`
+- `~/.codex/AGENTS.md`
 
 Also read `package.json` at the repo root, if there is one, and send it as a file. For the lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` and so on), send the lockfile name only, inside `description` (for example "Uses pnpm, pnpm-lock.yaml"). Never send the lockfile's contents.
 
-Never send source code. Send only the files listed above, each with its path from the repo root as `name` (use `~/.claude/CLAUDE.md` for the global file) and its full text, unchanged. If you find more than 10 files, send the 10 closest to the current folder and tell the person which ones were left out.
+Never send source code. Send only the files listed above, each with its path from the repo root as `name` (use `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md` for a global file) and its full text, unchanged. If you find more than 10 files, send the 10 closest to the current folder and tell the person which ones were left out.
 
 ## 2. Check
 

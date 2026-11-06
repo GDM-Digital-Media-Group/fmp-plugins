@@ -1,6 +1,6 @@
-# FixMyPrompt for Claude Code
+# FixMyPrompt for Claude Code and Codex
 
-**Stop Claude Code from solving the same problem twice.**
+**Stop Claude Code and Codex from solving the same problem twice.**
 
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-net.fixmyprompt%2Ffmp-blue)](https://registry.modelcontextprotocol.io/v0/servers?search=net.fixmyprompt)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
@@ -48,6 +48,20 @@ In Claude Code, run:
 
 Then restart Claude Code so the plugin loads.
 
+## Use it in Codex
+
+The same plugin works in the Codex CLI and the Codex app. In a terminal, run:
+
+```
+codex plugin marketplace add GDM-Digital-Media-Group/fmp-plugins
+codex plugin add fmp@fmp-plugins
+codex mcp login fmp
+```
+
+The last command opens FixMyPrompt in your browser to approve the connection, once per machine. Then start `codex` in your project and run `/hooks`: Codex asks you to review and trust the plugin's session-start hook before it runs it, and it asks again whenever the hook changes. Until you trust it, the memory tools still work, but Codex is not told to check them at the start of a session.
+
+In Codex the plugin's three skills are `fmp:sign-in`, `fmp:import` and `fmp:doctor`. Ask for them by name, or pick them from `/skills`. Everything below works the same way in both apps, and one plugin sign-in on a machine covers both.
+
 ## Sign in
 
 The plugin adds an MCP server named `fmp` that points at `https://fixmyprompt.net/api/mcp`. Nothing secret is stored in the plugin files.
@@ -80,7 +94,7 @@ From then on, each session starts with your company's approved pages (the compan
 
 Claude keeps one short, private note for each folder: what you are doing, decisions made, fixes that worked and what is next. It updates the note at real milestones, not every turn, and it never holds code, secrets or the conversation itself. The note is yours only; teammates in the same company never see it.
 
-A note expires 3 days after it was last saved, unless you keep it from the Context page in FixMyPrompt, which saves it as one of your private memories. Session notes work in Claude Code only, through this plugin.
+A note expires 3 days after it was last saved, unless you keep it from the Context page in FixMyPrompt, which saves it as one of your private memories. Session notes work in Claude Code and Codex, through this plugin.
 
 ## Auto-save lessons
 
@@ -92,13 +106,13 @@ Auto-save and import are part of Pro and up. To turn auto-save off, open Setting
 
 ## Import past sessions
 
-`/fmp:import` reads your past Claude Code sessions for the current folder on this machine (the logs under `~/.claude/projects`) and saves the lessons in them as the same kind of draft. It lists the sessions from the last 30 days first and asks which to read; by default those not imported yet.
+`/fmp:import` reads your past Claude Code and Codex sessions for the current folder on this machine (the logs under `~/.claude/projects` and `~/.codex/sessions`) and saves the lessons in them as the same kind of draft. It lists the sessions from the last 30 days first and asks which to read; by default those not imported yet.
 
 Claude reads the logs on your machine and sends FixMyPrompt only the lessons it picks, never code, logs or whole sessions. The session reader is a small script in the plugin that uses no network. It keeps a list of the sessions already imported in `~/.claude/fmp/imported-sessions.json`, on your machine only, so running the import again skips them. When it is done, Claude tells you how many lessons were saved and how many were left out, and why.
 
 ## Check your agent files
 
-`/fmp:doctor` runs the FixMyPrompt Agent Doctor on the agent instruction files in your repo: `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.cursor/rules/*` and `.github/copilot-instructions.md` in the folder and its parents, plus `~/.claude/CLAUDE.md`. It also sends `package.json` and the name of your lockfile, so the check knows your stack. It never sends source code.
+`/fmp:doctor` runs the FixMyPrompt Agent Doctor on the agent instruction files in your repo: `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.cursor/rules/*` and `.github/copilot-instructions.md` in the folder and its parents, plus `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. It also sends `package.json` and the name of your lockfile, so the check knows your stack. It never sends source code.
 
 Claude shows you the report, asks you a few short questions about rules your files lack (a skipped question becomes a TODO line, never a guess), then shows the full change list and writes the fixed files with its normal Edit or Write tool, so your permission settings decide whether you are asked first. Unless the repo is clean in git, each old file is copied to `<name>.fmp-backup` first.
 

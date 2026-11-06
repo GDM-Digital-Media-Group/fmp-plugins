@@ -1,7 +1,9 @@
 // Session reader for /fmp:import.
 //
 // Reads Claude Code session logs on this machine (projects/*/*.jsonl under
-// CLAUDE_CONFIG_DIR, or ~/.claude) so Claude can pick lessons out of them.
+// CLAUDE_CONFIG_DIR, or ~/.claude) and Codex session logs (sessions/YYYY/MM/DD/
+// rollout-*.jsonl under CODEX_HOME, or ~/.codex), so the AI can pick lessons
+// out of them.
 // Node built-ins only and no network: nothing here sends anything anywhere.
 // The only file it writes is the imported-sessions record in fmp/ under the
 // same base folder, kept on this machine.
@@ -25,7 +27,10 @@ const CODE_MAX_LINES = 20;
 
 const base = path.resolve(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude"));
 const projectsDir = path.join(base, "projects");
+const codexSessionsDir = path.join(path.resolve(process.env.CODEX_HOME || path.join(os.homedir(), ".codex")), "sessions");
 const fmpDir = path.join(base, "fmp");
+const CODEX_FILE_RE = /^rollout-.*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/;
+const CODEX_EXIT_RE = /^Process exited with code (-?\d+)/m;
 const recordFile = path.join(fmpDir, "imported-sessions.json");
 
 function fail(code = 1) {
@@ -68,7 +73,40 @@ function sessionFiles() {
       const file = path.join(dir, f);
       const st = lstatOrNull(file);
       if (!st || !st.isFile() || st.size > MAX_FILE_BYTES) continue;
-      out.push({ id, file, mtime: st.mtime });
+      out.push({ id, file, mtime: st.mtime, app: "claude" });
+    }
+  }
+  return out.concat(codexFiles());
+}
+
+function dirNames(dir) {
+  const st = lstatOrNull(dir);
+  if (!st || !st.isDirectory()) return [];
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+}
+
+/** Codex session files: sessions/YYYY/MM/DD/rollout-*-<id>.jsonl, same rules as above. */
+function codexFiles() {
+  const out = [];
+  for (const y of dirNames(codexSessionsDir)) {
+    const yd = path.join(codexSessionsDir, y);
+    for (const m of dirNames(yd)) {
+      const md = path.join(yd, m);
+      for (const d of dirNames(md)) {
+        const dd = path.join(md, d);
+        for (const f of dirNames(dd)) {
+          const hit = CODEX_FILE_RE.exec(f);
+          if (!hit) continue;
+          const file = path.join(dd, f);
+          const st = lstatOrNull(file);
+          if (!st || !st.isFile() || st.size > MAX_FILE_BYTES) continue;
+          out.push({ id: hit[1], file, mtime: st.mtime, app: "codex" });
+        }
+      }
     }
   }
   return out;
@@ -111,8 +149,44 @@ function resultText(content) {
   return "";
 }
 
+function clip(text) {
+  const t = collapseCode(text.trim());
+  if (!t) return null;
+  return t.length > MSG_MAX ? `${t.slice(0, MSG_MAX - 12)} [clipped]` : t;
+}
+
+/**
+ * A Codex log row, condensed. Only what the person typed and what the AI
+ * said to them (event_msg user_message / agent_message) and failed commands
+ * are kept; injected instructions, reasoning and ok tool output are dropped.
+ */
+function condenseCodex(row) {
+  const p = row.payload;
+  if (!p || typeof p !== "object") return null;
+  if (row.type === "event_msg" && (p.type === "user_message" || p.type === "agent_message") && typeof p.message === "string") {
+    const text = clip(p.message);
+    return text ? { role: p.type === "user_message" ? "Person" : "AI", text } : null;
+  }
+  if (row.type === "response_item" && p.type === "function_call_output" && typeof p.output === "string") {
+    const code = CODEX_EXIT_RE.exec(p.output);
+    if (!code || Number(code[1]) === 0) return null;
+    const t = p.output.slice(0, ERROR_MAX).trim();
+    return t ? { role: "Tool", text: `[tool error] ${t}` } : null;
+  }
+  return null;
+}
+
+/** The session's folder: Codex keeps it in session_meta or turn_context payloads. */
+function rowCwd(row) {
+  if (typeof row.cwd === "string") return row.cwd;
+  const p = row.payload;
+  if (p && typeof p === "object" && (row.type === "session_meta" || row.type === "turn_context") && typeof p.cwd === "string") return p.cwd;
+  return null;
+}
+
 /** One condensed message, or null when nothing in it is kept. */
-function condense(row) {
+function condense(row, app = "claude") {
+  if (app === "codex") return condenseCodex(row);
   if (row.type !== "user" && row.type !== "assistant") return null;
   if (row.isSidechain === true || row.isMeta === true) return null;
   const content = row.message && row.message.content;
@@ -142,13 +216,13 @@ function summarize(entry) {
   let started = null;
   let messages = 0;
   for (const r of rows) {
-    if (!cwd && typeof r.cwd === "string") cwd = r.cwd;
+    if (!cwd) cwd = rowCwd(r);
     if (typeof r.timestamp === "string" && !Number.isNaN(Date.parse(r.timestamp))) {
       if (!started || Date.parse(r.timestamp) < Date.parse(started)) started = new Date(r.timestamp).toISOString();
     }
-    if (condense(r)) messages++;
+    if (condense(r, entry.app)) messages++;
   }
-  return { id: entry.id, cwd, started: started ?? entry.mtime.toISOString(), messages };
+  return { id: entry.id, app: entry.app, cwd, started: started ?? entry.mtime.toISOString(), messages };
 }
 
 function loadRecord() {
@@ -201,11 +275,11 @@ function cmdRead(args) {
   const entry = sessionFiles().find((e) => e.id === id);
   if (!entry) fail(1);
   const rows = readLines(entry.file);
-  const cwd = rows.find((r) => typeof r.cwd === "string")?.cwd ?? "unknown";
+  const cwd = rows.map(rowCwd).find((c) => c !== null) ?? "unknown";
   const END = "\n[transcript cut at 60,000 characters]\n";
-  let out = `Session ${id} in ${cwd}\n`;
+  let out = `Session ${id} (${entry.app === "codex" ? "Codex" : "Claude Code"}) in ${cwd}\n`;
   for (const r of rows) {
-    const m = condense(r);
+    const m = condense(r, entry.app);
     if (!m) continue;
     const block = `\n${m.role}: ${m.text}\n`;
     if (out.length + block.length > TOTAL_MAX - END.length) {
